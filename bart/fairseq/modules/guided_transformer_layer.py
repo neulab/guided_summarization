@@ -172,36 +172,34 @@ class GuidedTransformerDecoderLayer(nn.Module):
             x = self.self_attn_layer_norm(x)
 
 
-        #z
-        if True:
-            residual = x
-            if self.normalize_before:
-                x = self.z_encoder_attn_layer_norm(x)
-            if z_prev_attn_state is not None:
-                prev_key, prev_value = z_prev_attn_state[:2]
-                saved_state: Dict[str, Optional[Tensor]] = {
-                    "prev_key": prev_key,
-                    "prev_value": prev_value,
-                }
-                if len(prev_attn_state) >= 3:
-                    saved_state["prev_key_padding_mask"] = z_prev_attn_state[2]
-                assert incremental_state is not None
-                self.z_encoder_attn._set_input_buffer(incremental_state, saved_state)
+        residual = x
+        if self.normalize_before:
+            x = self.z_encoder_attn_layer_norm(x)
+        if z_prev_attn_state is not None:
+            prev_key, prev_value = z_prev_attn_state[:2]
+            saved_state: Dict[str, Optional[Tensor]] = {
+                "prev_key": prev_key,
+                "prev_value": prev_value,
+            }
+            if len(prev_attn_state) >= 3:
+                saved_state["prev_key_padding_mask"] = z_prev_attn_state[2]
+            assert incremental_state is not None
+            self.z_encoder_attn._set_input_buffer(incremental_state, saved_state)
 
-            x, attn = self.z_encoder_attn(
-                query=x,
-                key=z_encoder_out,
-                value=z_encoder_out,
-                key_padding_mask=z_encoder_padding_mask,
-                incremental_state=incremental_state,
-                static_kv=True,
-                need_weights=need_attn or (not self.training and self.need_attn),
-                need_head_weights=need_head_weights,
-            )
-            x = F.dropout(x, p=self.dropout, training=self.training)
-            x = residual + x
-            if not self.normalize_before:
-                x = self.z_encoder_attn_layer_norm(x)
+        x, attn = self.z_encoder_attn(
+            query=x,
+            key=z_encoder_out,
+            value=z_encoder_out,
+            key_padding_mask=z_encoder_padding_mask,
+            incremental_state=incremental_state,
+            static_kv=True,
+            need_weights=need_attn or (not self.training and self.need_attn),
+            need_head_weights=need_head_weights,
+        )
+        x = F.dropout(x, p=self.dropout, training=self.training)
+        x = residual + x
+        if not self.normalize_before:
+            x = self.z_encoder_attn_layer_norm(x)
 
 
 

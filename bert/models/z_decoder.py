@@ -119,7 +119,6 @@ class Z_TransformerDecoderLayer(nn.Module):
             output = self.feed_forward(self.drop(mid) + z_query)
 
         return output, all_input, attn
-        # return output
 
     def _get_attn_subsequent_mask(self, size):
         """
@@ -285,7 +284,6 @@ class Z_TransformerDecoder(nn.Module):
             #copy_prob[:, :, 101] = 0
             #copy_prob[:, :, 102] = 0
             #copy_prob = copy_prob / torch.sum(copy_prob, -1, keepdim=True)
-            #print(torch.sum(copy_prob, 2))
 
         if state.cache is None:
             saved_inputs = torch.stack(saved_inputs)
@@ -345,9 +343,6 @@ class Z_TransformerDecoderState(DecoderState):
         state = Z_TransformerDecoderState(self.src, self.z)
         state.previous_input = new_input
         state.previous_layer_inputs = previous_layer_inputs
-        #print('here')
-        #print(state.previous_input.size())
-        #print(state.previous_layer_inputs.size())
         return state
 
     def _init_cache(self, memory_bank, num_layers):
@@ -394,11 +389,7 @@ class Z_TransformerDecoderState(DecoderState):
         if self.cache is not None:
             _recursive_map(self.cache)
         if self.previous_input is not None:
-            #print('here')
-            #print(self.previous_input.size())
             self.previous_input = fn(self.previous_input, 0)
-            #print(self.previous_input.size())
-            #1/0
         if self.previous_layer_inputs is not None:
             self.previous_layer_inputs = fn(self.previous_layer_inputs, 1)
 

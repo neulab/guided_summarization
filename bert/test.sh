@@ -9,11 +9,11 @@ python -W ignore z_train.py \
     -batch_size 3000 \
     -test_batch_size 1500 \
     -bert_data_path $BERT_DATA_PATH \
-    -log_file ../logs/${i}_fix50keys_512_nums \
+    -log_file ../logs/test.logs \
     -test_from $MODEL_PATH \
     -sep_optim true \
     -use_interval true \
-    -visible_gpus 0,1,2,3 \
+    -visible_gpus 0 \
     -max_pos 512 \
     -max_length 200 \
     -alpha 0.95 \
