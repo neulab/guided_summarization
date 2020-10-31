@@ -182,7 +182,6 @@ class Trainer(object):
                         state["criterion"], strict=True
                     )
             except Exception:
-                #state["model"] = dict(state["model"])
                 import copy
                 new_state = copy.deepcopy(state["model"]) 
                 for key in state["model"]:
@@ -192,15 +191,6 @@ class Trainer(object):
                     else:
                         new_state[key] = state["model"][key].clone()
                 model_state = self.get_model().state_dict()
-                #for key in model_state:
-                #    if 'z_' in key:
-                #        new_state[key] = state["model"][key.replace('z_', '')]
-                #        del new_state[key.replace('z_', '')]
-                #print(f'haha1 {state["model"].keys()}')
-                #print(f'haha2 {new_state.keys()}')
-                #self.get_model().load_state_dict(
-                #    state["model"], strict=False, args=self.args
-                #)
                 self.get_model().load_state_dict(
                     new_state, strict=False, args=self.args
                 )
@@ -210,7 +200,7 @@ class Trainer(object):
                     )
                 print(
                     "Cannot load model parameters from checkpoint {}; "
-                    "please ensure that the architectures match.".format(filename)
+                    "please ensure that the architectures match. This may be expected if you are training guided summarization models".format(filename)
                 )
 
             extra_state = state["extra_state"]
@@ -275,16 +265,11 @@ class Trainer(object):
                 combine=combine,
                 data_selector=data_selector,
             )
-        #print(self.task.max_positions())
-        #print(self.model.max_positions())
-        #print(self.args.max_tokens)
         max_positions=utils.resolve_max_positions(
             self.task.max_positions(),
             self.model.max_positions(),
             self.args.max_tokens,
         )
-        #print(max_positions)
-        #1/0
         return self.task.get_batch_iterator(
             dataset=self.task.dataset(self.args.train_subset),
             max_tokens=self.args.max_tokens,

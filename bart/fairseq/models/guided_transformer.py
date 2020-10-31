@@ -89,8 +89,6 @@ class GuidedTransformerModel(FairseqEncoderDecoderModel):
         super().__init__(encoder, decoder)
         self.args = args
         self.supports_align_args = True
-        #self.f1 = TransformerEncoderLayer(args)
-        #self.f2 = TransformerEncoderLayer(args)
 
     @staticmethod
     def add_args(parser):
@@ -434,8 +432,6 @@ class GuidedTransformerEncoder(FairseqEncoder):
             # add LayerDrop (see https://arxiv.org/abs/1909.11556 for description)
             dropout_probability = torch.empty(1).uniform_()
             if not self.training or (dropout_probability > self.encoder_layerdrop):
-                #print(self.num_layers)
-                #1/0
                 if i == self.num_layers-1 and not is_z:
                     continue
                 if i == self.num_layers-2 and is_z:

@@ -2,7 +2,7 @@ The code is based on https://github.com/nlpyang/PreSumm.
 
 ## Data Preparation
 
-First, download the preprocessed data from https://github.com/nlpyang/PreSumm. Then, for each datapoint, add its corresponding guidance signal (`example_add_guidance.py` is one example of how to do this).
+First, download the preprocessed data from https://github.com/nlpyang/PreSumm. Then, for each datapoint, add its corresponding guidance signal (`example_add_guidance.py` is one example of how to do this and `highligted_sentence_data.py` shows how we create the highlighted sentence data from the preprocessed data).
 
 ## Train
 

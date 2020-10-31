@@ -2,7 +2,7 @@ The code is based on https://github.com/pytorch/fairseq/tree/master/examples/bar
 
 ## Data Preparation
 
-First, download the preprocessed data from https://github.com/icml-2020-nlp/semsim. Then, for each datapoint, add its corresponding guidance signal (**raw text**, do not tokenize it).
+First, download the preprocessed data from https://github.com/icml-2020-nlp/semsim. Then, for each datapoint, add its corresponding guidance signal (**raw text**, do not tokenize it). Our highlighted sentence data is available here (https://drive.google.com/file/d/12SpWwfD3syIxcC-SdSNnDOI5sbXJaylC/view?usp=sharing).
 
 Then, BPE all the texts (see z_bpe.sh), including the source side, target side, and guidance signals, and store them into a single directory with the name `train.bpe.source`, `train.bpe.target`, `train.bpe.z`, `val.bpe.source`, `val.bpe.target`, `val.bpe.z`.
 

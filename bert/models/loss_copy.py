@@ -226,18 +226,12 @@ class NMTLossCompute(LossComputeBase):
         bottled_output = self._bottle(output)
         scores = self.generator(bottled_output)
         if COPY:
-            #print(output_copy.size())
-            #print(z_vec.size())
-            #print(output.size())
-            #print(bottled_output.size())
             scores_copy = self._bottle(output_copy)
             y_emb = self._bottle(y_emb)
             copy_state = self._bottle(copy_state)
 
             bottled_z = self._bottle(z_vec.unsqueeze(1).repeat(1, output.size(1) , 1))
             copy_prob = self.copy_generator(torch.cat([copy_state, y_emb, bottled_z], -1))
-            #print(torch.log(scores_copy + 1e-9))
-            #print(scores)
             scores = copy_prob * torch.log(scores_copy+1e-9) + (1.-copy_prob)*scores
 
         gtruth = target.contiguous().view(-1)

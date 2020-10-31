@@ -237,9 +237,6 @@ class Z_AbsSummarizer(nn.Module):
         else:
             self.f1 = TransformerDecoderLayer(self.bert.model.config.hidden_size, args.ext_heads, args.ext_ff_size, args.ext_dropout) 
             self.f2 = TransformerDecoderLayer(self.bert.model.config.hidden_size, args.ext_heads, args.ext_ff_size, args.ext_dropout) 
-        #self.f1 = Z_TransformerDecoderLayer(self.bert.model.config.hidden_size, args.ext_heads, args.ext_ff_size, args.ext_dropout) 
-        #self.f2 = Z_TransformerDecoderLayer(self.bert.model.config.hidden_size, args.ext_heads, args.ext_ff_size, args.ext_dropout) 
-        self.dropout_src = nn.Dropout(0.4)
 
         if checkpoint is not None:
             self.load_state_dict(checkpoint['model'], strict=True)
@@ -294,7 +291,6 @@ class Z_AbsSummarizer(nn.Module):
             z_batch, z_len = z.size()
 
             top_vec = self.bert(src, segs, mask_src)
-            #top_vec = self.dropout_src(top_vec)
             z_top_vec = self.bert(z, z_segs, mask_z)
 
             if not NO_LAYER: 
