@@ -10,10 +10,7 @@ from models.z_decoder import Z_TransformerDecoder, Z_TransformerDecoderLayer
 from models.encoder import Classifier, ExtTransformerEncoder, TransformerEncoderLayer
 from models.optimizers import Optimizer
 
-COPY=False
-CROSS=False
 
-NO_LAYER=False
 
 def build_optim(args, model, checkpoint):
     """ Build optimizer """
@@ -228,15 +225,8 @@ class Z_AbsSummarizer(nn.Module):
         self.generator = get_generator(self.vocab_size, self.args.dec_hidden_size, device)
         self.generator[0].weight = self.decoder.embeddings.weight
 
-        #COPY
-        if COPY:
-            self.copy_generator = get_copy_generator(self.args.dec_hidden_size, device)
-        if not CROSS:
-            self.f1 = TransformerEncoderLayer(self.bert.model.config.hidden_size, args.ext_heads, args.ext_ff_size, args.ext_dropout) 
-            self.f2 = TransformerEncoderLayer(self.bert.model.config.hidden_size, args.ext_heads, args.ext_ff_size, args.ext_dropout) 
-        else:
-            self.f1 = TransformerDecoderLayer(self.bert.model.config.hidden_size, args.ext_heads, args.ext_ff_size, args.ext_dropout) 
-            self.f2 = TransformerDecoderLayer(self.bert.model.config.hidden_size, args.ext_heads, args.ext_ff_size, args.ext_dropout) 
+        self.f1 = TransformerEncoderLayer(self.bert.model.config.hidden_size, args.ext_heads, args.ext_ff_size, args.ext_dropout) 
+        self.f2 = TransformerEncoderLayer(self.bert.model.config.hidden_size, args.ext_heads, args.ext_ff_size, args.ext_dropout) 
 
         if checkpoint is not None:
             self.load_state_dict(checkpoint['model'], strict=True)
@@ -254,13 +244,6 @@ class Z_AbsSummarizer(nn.Module):
                     xavier_uniform_(p)
                 else:
                     p.data.zero_()
-            if COPY:
-                for p in self.copy_generator.parameters():
-                    if p.dim() > 1:
-                        xavier_uniform_(p)
-                    else:
-                        #p.data.fill_(-1)
-                        p.data.zero_()
             if(args.use_bert_emb):
                 tgt_embeddings = nn.Embedding(self.vocab_size, self.bert.model.config.hidden_size, padding_idx=0)
                 tgt_embeddings.weight = copy.deepcopy(self.bert.model.embeddings.word_embeddings.weight)
@@ -272,35 +255,10 @@ class Z_AbsSummarizer(nn.Module):
 
 
     def forward(self, src, tgt, segs, clss, mask_src, mask_tgt, mask_cls, z, mask_z, z_segs):
-        if not CROSS:
-            top_vec = self.bert(src, segs, mask_src)
-            if not NO_LAYER: 
-                top_vec = self.f1(1, top_vec, top_vec, 1-mask_src)
-            z_top_vec = self.bert(z, z_segs, mask_z)
-            if not NO_LAYER: 
-                z_top_vec = self.f2(1, z_top_vec, z_top_vec, 1-mask_z)
-            dec_state = self.decoder.init_decoder_state(src, top_vec, z, z_top_vec)
-            decoder_outputs, state, copy_prob= self.decoder(tgt[:, :-1], top_vec, z_top_vec, dec_state)
-            return decoder_outputs, None, [copy_prob[0], copy_prob[1], copy_prob[2], z_top_vec[:, 0, :]]
-
-
-        else:
-            src_len = mask_src.size(-1)
-            z_len = mask_z.size(-1)
-            src_batch, src_len = src.size()
-            z_batch, z_len = z.size()
-
-            top_vec = self.bert(src, segs, mask_src)
-            z_top_vec = self.bert(z, z_segs, mask_z)
-
-            if not NO_LAYER: 
-                src_pad_mask = mask_src.unsqueeze(1).expand(src_batch, src_len, src_len)
-                z_pad_mask = mask_z.unsqueeze(1).expand(z_batch, src_len, z_len)
-                top_vec1, _ = self.f1(top_vec, z_top_vec, z_pad_mask, src_pad_mask)
-
-                src_pad_mask = mask_src.unsqueeze(1).expand(src_batch, z_len, src_len)
-                z_pad_mask = mask_z.unsqueeze(1).expand(z_batch, z_len, z_len)
-                z_top_vec1, _ = self.f2(z_top_vec, top_vec, src_pad_mask, z_pad_mask)
-            dec_state = self.decoder.init_decoder_state(src, top_vec1, z, z_top_vec1)
-            decoder_outputs, state, copy_prob = self.decoder(tgt[:, :-1], top_vec1, z_top_vec1, dec_state)
-            return decoder_outputs, None, [copy_prob[0], copy_prob[1], copy_prob[2], z_top_vec1[:, 0, :]]
+        top_vec = self.bert(src, segs, mask_src)
+        top_vec = self.f1(1, top_vec, top_vec, 1-mask_src)
+        z_top_vec = self.bert(z, z_segs, mask_z)
+        z_top_vec = self.f2(1, z_top_vec, z_top_vec, 1-mask_z)
+        dec_state = self.decoder.init_decoder_state(src, top_vec, z, z_top_vec)
+        decoder_outputs, state, copy_prob= self.decoder(tgt[:, :-1], top_vec, z_top_vec, dec_state)
+        return decoder_outputs, None, [copy_prob[0], copy_prob[1], copy_prob[2], z_top_vec[:, 0, :]]

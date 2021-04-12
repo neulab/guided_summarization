@@ -9,8 +9,6 @@ from models.reporter import ReportMgr, Statistics
 from others.logging import logger
 from others.utils import test_rouge, rouge_results_to_str
 
-COPY=False
-
 
 def _tally_parameters(model):
     n_params = sum([p.nelement() for p in model.parameters()])
@@ -55,7 +53,6 @@ def build_trainer(args, device_id, model, optims,loss):
 
     trainer = Trainer(args, model, optims, loss, grad_accum_count, n_gpu, gpu_rank, report_manager)
 
-    # print(tr)
     if (model):
         n_params = _tally_parameters(model)
         logger.info('* number of parameters: %d' % n_params)
@@ -205,10 +202,7 @@ class Trainer(object):
 
                 outputs, _, copy_prob = self.model(src, tgt, segs, clss, mask_src, mask_tgt, mask_cls, z, mask_z, z_segs)
 
-                if COPY:
-                    batch_stats = self.loss.monolithic_compute_loss(batch, outputs, copy_prob[0], copy_prob[1], copy_prob[2], copy_prob[3])
-                else:
-                    batch_stats = self.loss.monolithic_compute_loss(batch, outputs)
+                batch_stats = self.loss.monolithic_compute_loss(batch, outputs)
                 stats.update(batch_stats)
             self._report_step(0, step, valid_stats=stats)
             return stats
@@ -235,10 +229,7 @@ class Trainer(object):
             z_segs = batch.z_segs
 
             outputs, scores, copy_prob = self.model(src, tgt,segs, clss, mask_src, mask_tgt, mask_cls, z, mask_z, z_segs)
-            if COPY:
-                batch_stats = self.loss.sharded_compute_loss(batch, outputs, copy_prob[0], copy_prob[1], copy_prob[2], copy_prob[3], self.args.generator_shard_size, normalization)
-            else:
-                batch_stats = self.loss.sharded_compute_loss(batch, outputs, self.args.generator_shard_size, normalization)
+            batch_stats = self.loss.sharded_compute_loss(batch, outputs, self.args.generator_shard_size, normalization)
 
             batch_stats.n_docs = int(src.size(0))
 

@@ -21,7 +21,6 @@ from fairseq.modules.transformer_sentence_encoder import init_bert_params
 from fairseq.models.fairseq_encoder import EncoderOut
 
 from .guided_hub_interface import GuidedBARTHubInterface
-#from .hub_interface import BARTHubInterface
 from fairseq.modules import (
     AdaptiveSoftmax,
     LayerNorm,
@@ -56,15 +55,8 @@ class GuidedBARTModel(GuidedTransformerModel):
         super().__init__(args, encoder, decoder)
 
         # We follow BERT's random weight initialization
-
-        #self.f1 = GuidedTransformerEncoderLayer(args)
-        #self.f2 = GuidedTransformerEncoderLayer(args)
-        #self.f1 = TransformerEncoderLayer(args)
-        #self.f2 = TransformerEncoderLayer(args)
         self.apply(init_bert_params)
         self.classification_heads = nn.ModuleDict()
-        self.dropout1 = nn.Dropout(p=0.2)
-        self.dropout2 = nn.Dropout(p=0.2)
         if args.encoder_normalize_before:
             self.layer_norm = LayerNorm(args.encoder_embed_dim)
         else:
@@ -115,10 +107,6 @@ class GuidedBARTModel(GuidedTransformerModel):
         features_only=False,
         **extra_args,
     ):
-        #attn_args = {
-        #    "alignment_layer": self.alignment_layer,
-        #    "alignment_heads": self.alignment_heads,
-        #}
         decoder_out = self.decoder(prev_output_tokens, encoder_out, z_encoder_out=z_encoder_out, incremental_state=incremental_state, **extra_args)
 
         return decoder_out
@@ -131,50 +119,18 @@ class GuidedBARTModel(GuidedTransformerModel):
         if classification_head_name is not None:
             features_only = True
 
-        #FIXME: for pretrain
-        #z_src_tokens = src_tokens.clone()
-        #z_src_lengths = src_lengths
-
-        #encoder_out, encoder_padding_mask, encoder_embedding, encoder_states = self.encoder(
         encoder_out = self.encoder(
             False,
             src_tokens,
             src_lengths=src_lengths,
             **kwargs,
         )
-        #encoder_out.encoder_out = self.f1(encoder_out.encoder_out, encoder_out.encoder_padding_mask)
-        #print(src_tokens.size())
-        #print(z_tokens.size())
-        #print(src_tokens)
-        #print(z_tokens)
-        #print(z_tokens)
-        #encoder_out = self.f1(encoder_out, encoder_padding_mask)
-        #encoder_out = encoder_out + encoder_out2
-        '''x = self.f1(encoder_out.encoder_out, encoder_out.encoder_padding_mask)'''
-        #encoder_out = EncoderOut(
-        #    encoder_out=encoder_out,  # T x B x C
-        #    encoder_padding_mask=encoder_padding_mask,  # B x T
-        #    encoder_embedding=encoder_embedding,  # B x T x C
-        #    encoder_states=encoder_states,  # List[T x B x C]
-        #)
-
-        #z_encoder_out, z_encoder_padding_mask, z_encoder_embedding, z_encoder_states = self.encoder(
         z_encoder_out = self.encoder(
             True,
             z_tokens,
             src_lengths=z_lengths,
             **kwargs,
         )
-        #z_encoder_out.encoder_out = self.f2(z_encoder_out.encoder_out, encoder_out.encoder_padding_mask)
-        #x = self.f2(z_encoder_out.encoder_out, z_encoder_out.encoder_padding_mask)
-        #z_encoder_out = self.f2(z_encoder_out, z_encoder_padding_mask)
-        #z_encoder_out = z_encoder_out + z_encoder_out2
-        #z_encoder_out = EncoderOut(
-        #    encoder_out=z_encoder_out,  # T x B x C
-        #    encoder_padding_mask=z_encoder_padding_mask,  # B x T
-        #    encoder_embedding=z_encoder_embedding,  # B x T x C
-        #    encoder_states=z_encoder_states,  # List[T x B x C]
-        #)
 
         x, extra = self.decoder(
             prev_output_tokens,

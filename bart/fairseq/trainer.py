@@ -182,26 +182,28 @@ class Trainer(object):
                         state["criterion"], strict=True
                     )
             except Exception:
-                import copy
-                new_state = copy.deepcopy(state["model"]) 
-                for key in state["model"]:
-                    if 'encoder.layers.11' in key:
-                        new_key = key.replace('11', '12')
-                        new_state[new_key] = state["model"][key].clone()
-                    else:
-                        new_state[key] = state["model"][key].clone()
-                model_state = self.get_model().state_dict()
-                self.get_model().load_state_dict(
-                    new_state, strict=False, args=self.args
-                )
-                if utils.has_parameters(self.get_criterion()):
-                    self.get_criterion().load_state_dict(
-                        state["criterion"], strict=False
+                try:
+                    import copy
+                    new_state = copy.deepcopy(state["model"]) 
+                    for key in state["model"]:
+                        if 'encoder.layers.11' in key:
+                            new_key = key.replace('11', '12')
+                            new_state[new_key] = state["model"][key].clone()
+                        else:
+                            new_state[key] = state["model"][key].clone()
+                    model_state = self.get_model().state_dict()
+                    self.get_model().load_state_dict(
+                        new_state, strict=False, args=self.args
                     )
-                print(
-                    "Cannot load model parameters from checkpoint {}; "
-                    "please ensure that the architectures match. This may be expected if you are training guided summarization models".format(filename)
-                )
+                    if utils.has_parameters(self.get_criterion()):
+                        self.get_criterion().load_state_dict(
+                            state["criterion"], strict=False
+                        )
+                except Exception:
+                    raise Exception(
+                        "Cannot load model parameters from checkpoint {}; "
+                        "please ensure that the architectures match. This may be expected if you are training guided summarization models".format(filename)
+                    )
 
             extra_state = state["extra_state"]
             self._optim_history = state["optimizer_history"]

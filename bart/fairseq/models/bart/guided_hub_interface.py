@@ -52,7 +52,6 @@ class GuidedBARTHubInterface(nn.Module):
         bpe_sentence = '<s> ' + tokens + ' </s>'
         tokens = self.task.source_dictionary.encode_line(bpe_sentence, append_eos=False)
         sentences = [tokens.long()]
-        #tokens = self.task.source_dictionary.encode_line(bpe_sentence, append_eos=False)
         tokens = tokens.cpu().numpy()
         if tokens[0] == self.task.source_dictionary.bos():
             tokens = tokens[1:]  # remove <s>
@@ -60,8 +59,6 @@ class GuidedBARTHubInterface(nn.Module):
         doc_mask = eos_mask[1:] & eos_mask[:-1]
         sentences = np.split(tokens, doc_mask.nonzero()[0] + 1)
         sentences = [self.bpe.decode(self.task.source_dictionary.string(s)) for s in sentences]
-        #bpe_sentence = '<s> ' + tokens + ' </s>'
-        #sentence = self.bpe.decode(self.task.source_dictionary.string(tokens))
         return sentences[0]
 
     def encode(self, sentence: str, *addl_sentences, no_separator=True) -> torch.LongTensor:

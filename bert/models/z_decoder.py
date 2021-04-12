@@ -11,8 +11,6 @@ from models.neural import MultiHeadedAttention, PositionwiseFeedForward, Decoder
 
 MAX_SIZE = 5000
 
-COPY=False
-REVERSE=False
 
 class Z_TransformerDecoderLayer(nn.Module):
     """
@@ -70,8 +68,6 @@ class Z_TransformerDecoderLayer(nn.Module):
         input_norm = self.layer_norm_1(inputs)
         all_input = input_norm
         if previous_input is not None:
-            #print(previous_input.size())
-            #print(input_norm.size())
             all_input = torch.cat((previous_input, input_norm), dim=1)
             dec_mask = None
 
@@ -83,40 +79,22 @@ class Z_TransformerDecoderLayer(nn.Module):
 
         query = self.drop(query) + inputs
 
-        if not REVERSE:
-            query_norm = self.layer_norm_2(query)
-            z_mid, attn = self.z_context_attn(z_memory_bank, z_memory_bank, query_norm,
-                                          mask=z_pad_mask,
-                                          layer_cache=layer_cache,
-                                          type="z_context")
+        query_norm = self.layer_norm_2(query)
+        z_mid, attn = self.z_context_attn(z_memory_bank, z_memory_bank, query_norm,
+                                      mask=z_pad_mask,
+                                      layer_cache=layer_cache,
+                                      type="z_context")
 
-            z_query = self.drop(z_mid) + query
-            z_query_norm = self.layer_norm_z(z_query)
-            mid, z_attn = self.context_attn(memory_bank, memory_bank, z_query_norm,
-                                          mask=src_pad_mask,
-                                          layer_cache=layer_cache,
-                                          type="context")
-            
-
-
-            output = self.feed_forward(self.drop(mid) + z_query)
-        else:
-            query_norm = self.layer_norm_z(query)
-            z_mid, z_attn = self.context_attn(memory_bank, memory_bank, query_norm,
-                                          mask=src_pad_mask,
-                                          layer_cache=layer_cache,
-                                          type="context")
-
-            z_query = self.drop(z_mid) + query
-            z_query_norm = self.layer_norm_2(z_query)
-            mid, attn = self.z_context_attn(z_memory_bank, z_memory_bank, z_query_norm,
-                                          mask=z_pad_mask,
-                                          layer_cache=layer_cache,
-                                          type="z_context")
-            
+        z_query = self.drop(z_mid) + query
+        z_query_norm = self.layer_norm_z(z_query)
+        mid, z_attn = self.context_attn(memory_bank, memory_bank, z_query_norm,
+                                      mask=src_pad_mask,
+                                      layer_cache=layer_cache,
+                                      type="context")
+        
 
 
-            output = self.feed_forward(self.drop(mid) + z_query)
+        output = self.feed_forward(self.drop(mid) + z_query)
 
         return output, all_input, attn
 
@@ -178,10 +156,6 @@ class Z_TransformerDecoder(nn.Module):
         self.embeddings = embeddings
         self.pos_emb = PositionalEncoding(dropout,self.embeddings.embedding_dim)
         self.vocab_size = vocab_size
-
-        if COPY:
-            self.copy_attn = MultiHeadedAttention(
-                1, d_model, dropout=dropout)
 
         # Build TransformerDecoder.
         self.transformer_layers = nn.ModuleList(
@@ -259,32 +233,6 @@ class Z_TransformerDecoder(nn.Module):
 
         copy_prob = None
         copy_state = None
-        if COPY:
-            layer_cache = None
-            if step is not None:
-                prev_layer_input = None
-                if state.cache is None:
-                    if state.previous_input is not None:
-                        prev_layer_input = state.previous_layer_inputs[self.num_layers]
-                if prev_layer_input is not None:
-                    output = torch.cat((prev_layer_input, output), dim=1)
-                if state.cache is None:
-                    saved_inputs.append(output)
-                layer_cache=state.cache["layer_{}".format(self.num_layers)] if state.cache is not None else None
-            copy_state, attn = self.copy_attn(z_memory_bank, z_memory_bank, output,
-                                          mask=z_pad_mask,
-                                          layer_cache=layer_cache,
-                                          type="z_context")
-            #attn = torch.mean(attn, 1)
-            attn = attn[:, 0, :, :]
-            src_onehot = torch.zeros(z_words.size(0), z_words.size(1), self.vocab_size).cuda()
-            z = z_words.unsqueeze(2)
-            src_onehot.scatter_(2, z, 1)
-            copy_prob = torch.bmm(attn, src_onehot)
-            #copy_prob[:, :, 101] = 0
-            #copy_prob[:, :, 102] = 0
-            #copy_prob = copy_prob / torch.sum(copy_prob, -1, keepdim=True)
-
         if state.cache is None:
             saved_inputs = torch.stack(saved_inputs)
 
@@ -358,16 +306,6 @@ class Z_TransformerDecoderState(DecoderState):
             layer_cache["self_keys"] = None
             layer_cache["self_values"] = None
             self.cache["layer_{}".format(l)] = layer_cache
-        if COPY:
-            layer_cache = {
-                "memory_keys": None,
-                "memory_values": None,
-                "z_memory_keys": None,
-                "z_memory_values": None
-            }
-            layer_cache["self_keys"] = None
-            layer_cache["self_values"] = None
-            self.cache["layer_{}".format(num_layers)] = layer_cache
 
 
     def repeat_beam_size_times(self, beam_size):

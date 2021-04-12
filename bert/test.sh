@@ -9,7 +9,7 @@ python -W ignore z_train.py \
     -batch_size 3000 \
     -test_batch_size 1500 \
     -bert_data_path $BERT_DATA_PATH \
-    -log_file ../logs/test.logs \
+    -log_file logs/test.logs \
     -test_from $MODEL_PATH \
     -sep_optim true \
     -use_interval true \
