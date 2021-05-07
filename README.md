@@ -1,5 +1,11 @@
-Implementations of `GSum: A General Framework for Guided Neural Abstractive Summarization`. The `bart` and `bert` repos contain code and documentations for BART- and BERT-based models respectively.
+Implementations of our [paper](https://arxiv.org/abs/2010.08014) `GSum: A General Framework for Guided Neural Abstractive Summarization`. 
 
+
+### Code
+
+The `bart` and `bert` repos contain code and documentations for BART- and BERT-based models respectively.
+
+The `scripts` repo contains some helper functions for extracting the guidance signals.
 
 ### Citation
 
