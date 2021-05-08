@@ -12,5 +12,14 @@ for l, ref in zip(oras, refs):
     l = l.stirp().replace('<q>', ' ')
     words = (keywords.keywords(l, words = 50, split=True))
     ref = ref.strip()
-    words = [word in words if word in ref]
-    out.write('[SEP]'.join(words)+'\n')
+    new_words = []
+    for word in words:
+        flag=True
+        ws = word.split()
+        for w in ws:
+            if not w in ref:
+                flag=False
+                break
+        if flag:
+            new_words.append(word)
+    out.write(' [SEP] '.join(new_words)+'\n')
